@@ -1,17 +1,16 @@
 //Author: Kartikei Mittal
 //Implementation of Graph in C++ using Adjancey matriix.
 #include <iostream>
-//Standard Exception Library
 #include <exception>
-
 #include<algorithm>
 #include<vector>
 #include<queue>
     using namespace std;
-
+//Maximum Number of Vertex
 #define maxVertex 10
 #define vertex_size vertices.size()
 
+//== Need to be overloaded for given typename T
 template <typename T>
 class Graph
 {
@@ -129,7 +128,6 @@ try
     G.add_edge(2,3);
     G.DFT(2);
     G.show_adjMat();
-    
     return 0;
 }
 catch(exception &e) {

@@ -1,5 +1,6 @@
 //Author: Kartikei Mittal
 //ID: 2017KUCP1032
+//Implementation of Binary Search Tree, (insertion and Pre-order traversal)
 #include<iostream>
 using namespace std;
 class BST
