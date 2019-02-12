@@ -74,31 +74,29 @@ class Graph
     {
         if(!iscycle)
         {
+            NodePtr next_node = NULL;
             root->visited = true;
             cout<<"Data: "<<root->data<<endl;
             for(int i=0; i<root->degree && !iscycle; ++i)
+            {
                 if(root->Links[i]->n1 == root)
-                    if(!(root->Links[i]->n2->visited))
-                    {
-                        paraent_node = root;
-                        isCyclic_util(root->Links[i]->n2, iscycle);
-                    }
-                    else if(root->Links[i]->n2 != paraent_node)
-                    {
-                        cout<<"Cycle found at: "<<root->Links[i]->n2->data<<endl;
-                        iscycle=true;
-                    }
-                else if(root->Links[i]->n2 == root)
-                    if(!(root->Links[i]->n1->visited))
-                    {
-                        paraent_node = root;
-                        isCyclic_util(root->Links[i]->n1, iscycle);
-                    }
-                    else if(root->Links[i]->n1 != paraent_node)
-                    {
-                        cout<<"1Cycle found at: "<<root->Links[i]->n1->data<<endl;
-                        iscycle=true;
-                    }
+                    next_node = root->Links[i]->n2;
+                else
+                    next_node = root->Links[i]->n1;
+                /*paraent_node
+                root or current node
+                next_node*/
+                if(!next_node->visited)
+                {
+                    paraent_node = root;
+                    isCyclic_util(next_node, iscycle);
+                }
+                else if(next_node != paraent_node)
+                {
+                    cout<<"Cycle found at: "<<next_node->data<<endl;
+                    iscycle=true;
+                }
+            }
         }
         return iscycle;
     }
