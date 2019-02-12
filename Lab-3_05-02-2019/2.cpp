@@ -57,8 +57,8 @@ template<typename T>
 class Graph
 {
     int num_nodes;
-    NodePtr N[MAX_NODE];
     NodePtr paraent_node;
+    NodePtr N[MAX_NODE];
 
     void DFT_util(NodePtr root)
     {
