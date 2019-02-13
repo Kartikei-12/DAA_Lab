@@ -1,37 +1,32 @@
 //Author: Kartikei Mittal
 //ID: 2017KUCP1032
 #include<iostream>
+#include<vector>
+#include<algorithm>
     using namespace std;
-
 
 #define DEGREE 8
 #define MAX_NODE DEGREE+1
 
 #define NodePtr Node<T>*
+#define EdgePtr Edge<T>*
 
 template<typename T>
 class Edge;
 
 template<typename T>
 class Node
-{
-public:
+{public:
     bool visited;
     int degree;
     T data;
-    Edge<T>* Links[DEGREE];
+    EdgePtr Links[DEGREE];
 
-    Node(T a)
-    {
-        visited = false;
-        degree = 0;
-        data=a;
+    Node(T a): visited(false), degree(0), data(a) {
         for(int i=0; i<DEGREE; ++i)
             Links[i] = NULL;
     }
-
-    void add_e(Edge<T>* e)
-    {
+    void add_e(EdgePtr e) {
         Links[degree] = e;
         ++degree;
     }
@@ -42,117 +37,109 @@ class Edge
 {
 public:
     long double value;
-    //Just simple names graph is undirected
-    NodePtr n1;
-    NodePtr n2;
-    bool isProcessed;
-    Edge(NodePtr t1, NodePtr t2, long double v=0)
-    {
-        isProcessed = false;
-        value = v;
-        n1 = t1;
-        n2 = t2;
-    }
+    NodePtr n1; NodePtr n2;//Just simple names graph is undirected
+    Edge(NodePtr t1, NodePtr t2, long double v=0): n1(t1), n2(t2), value(v) {;}
 };
 
 
 template<typename T>
 class Graph
 {
-public:
     int num_nodes, num_edge;
     NodePtr paraent_node;
     NodePtr N[MAX_NODE];
-    Edge<T>* E[MAX_NODE*DEGREE];
-
-
-    Graph()
-    {
-        num_nodes = num_edge = 0;
-        for(int i=0; i<MAX_NODE; ++i)
-            N[i] = NULL;
-        for(int i=0; i<MAX_NODE*DEGREE; ++i)
-            E[i] = NULL;
+    EdgePtr E[MAX_NODE*DEGREE];
+public:
+    Graph(): num_nodes(0), num_edge(0) {
+        for(int i=0; i<MAX_NODE; ++i) N[i] = NULL;
+        for(int i=0; i<MAX_NODE*DEGREE; ++i) E[i] = NULL;
     }
-
-    Edge<T>* minEdge(Edge<T>* Ed[])
-    {
-        Edge<T>* e = Ed[0];
-        for(int i=1; Ed[i]!=NULL; ++i)
-            if(!Ed[i]->isProcessed && e->value > Ed[i]->value)
-                e = Ed[i];
-        if(e->isProcessed)
-            e = NULL;
-        return e;
-    }
-
     NodePtr add_node(T d)
     {
-        if(num_nodes >= MAX_NODE)
-        {
-            cerr<<"Maximum number of Nodes reached.";
-            return NULL;
+        if(num_nodes >= MAX_NODE) {
+            cerr<<"Maximum number of Nodes reached."; return NULL;
         }
         NodePtr temp = new Node<T>(d);
         N[num_nodes] = temp;
         num_nodes++;
         return temp;
     }
-
     void add_edge(NodePtr f, NodePtr t, long double val=0)
     {
-        if(num_edge >= DEGREE*MAX_NODE)
-        {
-            cerr<<"\nCannot add any more edges.";
-            return ;
+        if(num_edge >= DEGREE*MAX_NODE) {
+            cerr<<"\nCannot add any more edges."; return ;
         }
-        Edge<T>* temp = new Edge<T>(f, t, val);
+        EdgePtr temp = new Edge<T>(f, t, val);
         f->add_e(temp);
         t->add_e(temp);
         E[num_edge] = temp;
         ++num_edge;
     }
-
-    void add_edge(Edge<T>* e)
+    void add_edge(EdgePtr e)
     {
-        if(num_edge >= DEGREE*MAX_NODE)
-        {
-            cerr<<"\nCannot add any more edges.";
-            return ;
+        if(num_edge >= DEGREE*MAX_NODE) {
+            cerr<<"\nCannot add any more edges."; return ;
         }
         e->n1->add_e(e);
         e->n2->add_e(e);
         E[num_edge] = e;
         ++num_edge;
     }
-
-    Graph primsMST_util(Graph &g, NodePtr root, Edge<T>* Ed[])
+    
+    NodePtr get_node_from_data(T d)
     {
-        int a=0;
-        for(; Ed[a]!=NULL; ++a)
-        for(int j=0; j<root->degree; ++j)
-        {
-            Ed[a] = root->Links[j];
-            ++a;
-        }
-        Edge<T>* minE = minEdge(Ed);
-        if(minE == NULL)
-            return g;
-        Graph A=g;
-        A.add_edge(minE);
-        minE->isProcessed = true;
-        if(A.isCyclic())
-        {
-            
-
-        }
-        
-        if(minE->n1 == root)
-            primsMST_util(g, minE->n2, Ed);
-        else
-            primsMST_util(g, minE->n1, Ed);
+        for(int i=0; i<num_nodes; ++i)
+            if(d == N[i]->data)
+                return N[i];
+        return add_node(d);
     }
+    EdgePtr minEdge(vector<EdgePtr> Ed)
+    {
+        EdgePtr e = Ed[0];
+        for(int i=1; i<Ed.size(); ++i)
+            if(e->value > Ed[i]->value)
+                e = Ed[i];
+        return e;
+    }
+    
+    Graph primsMST_util(Graph &g, NodePtr root, vector<EdgePtr> &Ed)
+    {//cout<<"Processing node: "<<root->data<<endl;
+        if(root->visited)
+            return g;
+        root->visited = true;
 
+        EdgePtr minE = NULL;
+        g.get_node_from_data(root->data);
+        
+        for(int i=0; i<root->degree; ++i)
+            if((root->Links[i]->n1 == root && !root->Links[i]->n2->visited) ||
+                (root->Links[i]->n2 == root && !root->Links[i]->n1->visited))
+                Ed.push_back(root->Links[i]);
+        
+        if(Ed.size()==0)
+            return g;
+        
+        minE = minEdge(Ed);
+        // cout<<"\tProcessing Edge: "
+        //     <<minE->n1->data<<" "
+        //     <<minE->n2->data<<" "
+        //     <<minE->value<<endl;
+        if(minE->n1->visited && minE->n2->visited)
+        //cout<<"On Last vible node, abondaining current edge."<<endl;
+            return g;
+        
+        NodePtr n1 = g.get_node_from_data(minE->n1->data);
+        NodePtr n2 = g.get_node_from_data(minE->n2->data);
+        g.add_edge(n1, n2, minE->value);
+        
+        Ed.erase(remove(Ed.begin(), Ed.end(), minE), Ed.end());
+
+        if(minE->n1->visited)
+            primsMST_util(g, minE->n2, Ed);
+        else if(minE->n2->visited)
+            primsMST_util(g, minE->n1, Ed);
+        return g;
+    }
     void DFT_util(NodePtr root)
     {
         root->visited = true;
@@ -163,9 +150,8 @@ public:
             else if(!(root->Links[i]->n1->visited))
                 DFT_util(root->Links[i]->n1);
     }
-
-    bool isCyclic_util(NodePtr root, bool &iscycle)
-    {
+    
+    bool isCyclic_util(NodePtr root, bool &iscycle) {
         if(!iscycle)
         {
             root->visited = true;
@@ -178,10 +164,8 @@ public:
                         isCyclic_util(root->Links[i]->n2, iscycle);
                     }
                     else if(root->Links[i]->n2 != paraent_node)
-                    {
                         //cout<<"Cycle found at: "<<root->Links[i]->n2->data<<endl;
                         iscycle=true;
-                    }
                 else if(root->Links[i]->n2 == root)
                     if(!(root->Links[i]->n1->visited))
                     {
@@ -189,46 +173,33 @@ public:
                         isCyclic_util(root->Links[i]->n1, iscycle);
                     }
                     else if(root->Links[i]->n1 != paraent_node)
-                    {
-                        //cout<<"1Cycle found at: "<<root->Links[i]->n1->data<<endl;
+                        //cout<<"Cycle found at: "<<root->Links[i]->n1->data<<endl;
                         iscycle=true;
-                    }
         }
         return iscycle;
     }
-
-    void DFT(NodePtr root = NULL)
-    {
-        if(root == NULL)
-            root = N[0];
-        for(int i=0; i<num_nodes; ++i)
-            N[i]->visited = false;
-        DFT_util(root);
-    }
-
     bool isCyclic(NodePtr root = NULL)
     {
-        if(root == NULL)
-            root = N[0];
-        paraent_node = NULL;
-        for(int i=0; i<num_nodes; ++i)
-            N[i]->visited = false;
         bool a = false;
+        paraent_node = NULL;
+        if(root == NULL) root = N[0];
+        for(int i=0; i<num_nodes; ++i) N[i]->visited = false;
         return isCyclic_util(root, a);
     }
-
+    
+    void DFT(NodePtr root = NULL)
+    {
+        if(root == NULL) root = N[0];
+        for(int i=0; i<num_nodes; ++i) N[i]->visited = false;
+        DFT_util(root);
+    }
+    
     Graph primsMST(NodePtr root = NULL)
     {
-        Edge<T>* Ed[num_edge*4];
-        Graph g;
-        
-        if(root == NULL)
-            root = N[0];
-        for(int i=0; i<num_edge; ++i)
-        {
-            Ed[i] = NULL;
-            E[i]->isProcessed = false;
-        }
+        for(int i=0; i<num_nodes; ++i) N[i]->visited = false;
+        vector<EdgePtr> Ed(MAX_NODE*DEGREE);
+        Graph<T> g;
+        if(root == NULL) root = N[0];
         return primsMST_util(g, root, Ed);
     }
 };
@@ -237,26 +208,29 @@ public:
 
 int main(int argc, char const *argv[])
 {  
-    Edge<int>* edgess[9];
-    Node<int>* nodess[6];
-    Graph<int> G;
+    Edge<char>* edgess[9];
+    Node<char>* nodess[6];
+    Graph<char> G;
 
     for(int i=0; i<6; ++i)
-        nodess[i] = G.add_node(i);
-    
-    edgess[0] = new Edge<int>(nodess[0], nodess[1], 5);
-    edgess[1] = new Edge<int>(nodess[1], nodess[2], 2);
-    edgess[2] = new Edge<int>(nodess[2], nodess[3], 5);
-    edgess[3] = new Edge<int>(nodess[3], nodess[4], 3);
-    edgess[4] = new Edge<int>(nodess[2], nodess[4], 6);
-    edgess[5] = new Edge<int>(nodess[2], nodess[5], 12);
-    edgess[6] = new Edge<int>(nodess[5], nodess[4], 1);
-    edgess[7] = new Edge<int>(nodess[1], nodess[5], 10);
-    edgess[8] = new Edge<int>(nodess[0], nodess[5], 4);
-
+        nodess[i] = G.add_node(i+65);
+    edgess[0] = new Edge<char>(nodess[0], nodess[1], 5.0);
+    edgess[1] = new Edge<char>(nodess[1], nodess[2], 2.0);
+    edgess[2] = new Edge<char>(nodess[2], nodess[3], 5.0);
+    edgess[3] = new Edge<char>(nodess[3], nodess[4], 3.0);
+    edgess[4] = new Edge<char>(nodess[2], nodess[4], 6.0);
+    edgess[5] = new Edge<char>(nodess[2], nodess[5], 12.0);
+    edgess[6] = new Edge<char>(nodess[5], nodess[4], 1.0);
+    edgess[7] = new Edge<char>(nodess[1], nodess[5], 10.0);
+    edgess[8] = new Edge<char>(nodess[0], nodess[5], 4.0);
     for(int i=0; i<9; ++i)
         G.add_edge(edgess[i]);
- 
-    cout<<"Is cyclic:"<<G.primsMST().isCyclic()<<endl;
+    
+    G.DFT();
+    
+    Graph<char> l = G.primsMST();
+    cout<<"\n\nPrinting minimum spanning tree:\n";
+    l.DFT();
+    // cout<<"A "<<l.num_nodes<<" A "<<l.num_edge;
     return 0;
 }
