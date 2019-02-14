@@ -50,7 +50,9 @@ class Graph
     NodePtr N[MAX_NODE];
     EdgePtr E[MAX_NODE*DEGREE];
 public:
-    Graph(): num_nodes(0), num_edge(0) {
+    Graph() 
+    {
+        num_nodes = num_edge = 0;
         for(int i=0; i<MAX_NODE; ++i) N[i] = NULL;
         for(int i=0; i<MAX_NODE*DEGREE; ++i) E[i] = NULL;
     }
@@ -94,44 +96,49 @@ public:
         return add_node(d);
     }
     EdgePtr minEdge(vector<EdgePtr> Ed)
-    {
-        EdgePtr e = Ed[0];
-        for(int i=1; i<Ed.size(); ++i)
-            if(e->value > Ed[i]->value)
-                e = Ed[i];
+    {// cout<<"\nFinding min\n";
+        EdgePtr e = Ed.at(0);
+        for(EdgePtr i:Ed)
+            if(e->value > i->value)
+                e = i;
+        cout<<"\tProcessing Edge: "
+            <<e->n1->data<<" "
+            <<e->n2->data<<" "
+            <<e->value<<endl;
         return e;
     }
     
     Graph primsMST_util(Graph &g, NodePtr root, vector<EdgePtr> &Ed)
-    {//cout<<"Processing node: "<<root->data<<endl;
-        if(root->visited)
-            return g;
+    {
+        cout<<"Processing node: "<<root->data<<endl;
+        if(root->visited)//cerr<<"Visited Node found.";
+            return g;     
         root->visited = true;
 
         EdgePtr minE = NULL;
-        g.get_node_from_data(root->data);
-        
+        EdgePtr temp = NULL;
+        g.get_node_from_data(root->data);//NodePtr temp = 
+
         for(int i=0; i<root->degree; ++i)
-            if((root->Links[i]->n1 == root && !root->Links[i]->n2->visited) ||
-                (root->Links[i]->n2 == root && !root->Links[i]->n1->visited))
-                Ed.push_back(root->Links[i]);
-        
-        if(Ed.size()==0)
-            return g;
+        {
+            temp = root->Links[i];
+            if((temp->n1 == root && !temp->n2->visited) ||
+               (temp->n2 == root && !temp->n1->visited))
+                Ed.push_back(temp);
+        }
+        // cout<<"\n Edges exhausted"<<endl;
+        if(Ed.size()==0) return g;
         
         minE = minEdge(Ed);
-        // cout<<"\tProcessing Edge: "
-        //     <<minE->n1->data<<" "
-        //     <<minE->n2->data<<" "
-        //     <<minE->value<<endl;
-        if(minE->n1->visited && minE->n2->visited)
+
         //cout<<"On Last vible node, abondaining current edge."<<endl;
-            return g;
+        if(minE->n1->visited && minE->n2->visited) return g;
         
-        NodePtr n1 = g.get_node_from_data(minE->n1->data);
-        NodePtr n2 = g.get_node_from_data(minE->n2->data);
-        g.add_edge(n1, n2, minE->value);
-        
+        g.add_edge(
+            g.get_node_from_data(minE->n1->data),
+            g.get_node_from_data(minE->n2->data),
+            minE->value
+        );//Remove processed edge
         Ed.erase(remove(Ed.begin(), Ed.end(), minE), Ed.end());
 
         if(minE->n1->visited)
@@ -150,34 +157,31 @@ public:
             else if(!(root->Links[i]->n1->visited))
                 DFT_util(root->Links[i]->n1);
     }
-    
     bool isCyclic_util(NodePtr root, bool &iscycle) {
         if(!iscycle)
         {
-            root->visited = true;
-            //cout<<"Data: "<<root->data<<endl;
+            root->visited = true; // cout<<"Data: "<<root->data<<endl;
             for(int i=0; i<root->degree && !iscycle; ++i)
                 if(root->Links[i]->n1 == root)
                     if(!(root->Links[i]->n2->visited))
                     {
                         paraent_node = root;
-                        isCyclic_util(root->Links[i]->n2, iscycle);
+                        iscycle = isCyclic_util(root->Links[i]->n2, iscycle);
                     }
                     else if(root->Links[i]->n2 != paraent_node)
-                        //cout<<"Cycle found at: "<<root->Links[i]->n2->data<<endl;
-                        iscycle=true;
+                        return true;// Cycle found
                 else if(root->Links[i]->n2 == root)
                     if(!(root->Links[i]->n1->visited))
                     {
                         paraent_node = root;
-                        isCyclic_util(root->Links[i]->n1, iscycle);
+                        iscycle = isCyclic_util(root->Links[i]->n1, iscycle);
                     }
                     else if(root->Links[i]->n1 != paraent_node)
-                        //cout<<"Cycle found at: "<<root->Links[i]->n1->data<<endl;
-                        iscycle=true;
+                        return true;// Cycle found
         }
         return iscycle;
     }
+
     bool isCyclic(NodePtr root = NULL)
     {
         bool a = false;
@@ -186,19 +190,19 @@ public:
         for(int i=0; i<num_nodes; ++i) N[i]->visited = false;
         return isCyclic_util(root, a);
     }
-    
     void DFT(NodePtr root = NULL)
     {
         if(root == NULL) root = N[0];
         for(int i=0; i<num_nodes; ++i) N[i]->visited = false;
         DFT_util(root);
+        cout<<"\nNo. of nodes: "<<num_nodes
+            <<"\nNo. of edges: "<<num_edge<<endl;
     }
-    
     Graph primsMST(NodePtr root = NULL)
     {
-        for(int i=0; i<num_nodes; ++i) N[i]->visited = false;
-        vector<EdgePtr> Ed(MAX_NODE*DEGREE);
         Graph<T> g;
+        vector<EdgePtr> Ed;//(MAX_NODE*DEGREE)
+        for(int i=0; i<num_nodes; ++i) N[i]->visited = false;
         if(root == NULL) root = N[0];
         return primsMST_util(g, root, Ed);
     }
@@ -226,11 +230,12 @@ int main(int argc, char const *argv[])
     for(int i=0; i<9; ++i)
         G.add_edge(edgess[i]);
     
-    G.DFT();
+    // G.DFT();
     
     Graph<char> l = G.primsMST();
     cout<<"\n\nPrinting minimum spanning tree:\n";
     l.DFT();
-    // cout<<"A "<<l.num_nodes<<" A "<<l.num_edge;
+    // cout<<"\nIscyclic: "<<l.isCyclic()<<endl;
+    //cout<<"A "<<l.num_nodes<<" A "<<l.num_edge;
     return 0;
 }
