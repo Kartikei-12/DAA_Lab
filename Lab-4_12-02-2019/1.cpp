@@ -4,7 +4,8 @@
 #include<vector>
 #include<algorithm>
     using namespace std;
-
+//Note: datatype T used in defination must have properly
+//overloaded assignment(=) operator.
 #define DEGREE 8
 #define MAX_NODE DEGREE+1
 
