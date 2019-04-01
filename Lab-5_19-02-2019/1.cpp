@@ -10,10 +10,8 @@
         >>
 ----------------------------------------------------*/
 #include<iostream>
-#include<string>
 #include<vector>
 #include<algorithm>
-#include<iterator>
     using namespace std;
 #define MAX_DOUBLE 1e15
 #define DEGREE 8
@@ -146,14 +144,21 @@ public:
         int new_node_index, old_node_index;
         EdgePtr minEdge = NULL;
         long double new_dist = MAX_DOUBLE;
+        
         root->visited = true;
         cout<<"Processing node: "<<root->data()<<endl;
+        
         for(int i=0; i<root->degree(); ++i)
         {
             NodePtr nextNode=(root->Links[i]->n1==root)? 
                         root->Links[i]->n2 : root->Links[i]->n1;
             if(!nextNode->visited)
                 Ed.push_back(root->Links[i]);
+            old_node_index = get_node_index(root);
+            new_node_index = get_node_index(nextNode);
+            new_dist = distance[old_node_index] + root->Links[i]->get_value(); 
+            if(distance[new_node_index] > new_dist)
+                distance[new_node_index] = new_dist;
         }    
         do {
             minEdge = min_edge<T>(Ed);
@@ -169,7 +174,7 @@ public:
         {
             old_node_index = get_node_index(visitedNode);
             new_node_index = get_node_index(notVisitedNode);
-            new_dist = distance[old_node_index]+minEdge->get_value();        
+            new_dist = distance[old_node_index] + minEdge->get_value();        
             if(distance[new_node_index] > new_dist)
                 distance[new_node_index] = new_dist;
             distance = dijSSSP_util(notVisitedNode, Ed, distance);
@@ -202,25 +207,24 @@ public:
             minEdge->get_value()
         );
         
-        NodePtr visitedNode = (minEdge->n1->visited)? minEdge->n1 : minEdge->n2;
-        NodePtr notVisitedNode = (minEdge->n1->visited)? minEdge->n2 : minEdge->n1;
         if(!minEdge->n1->visited || !minEdge->n2->visited)
-            g = primsMST_util(g, notVisitedNode, Ed);
+            g = primsMST_util(
+                    g,
+                    (minEdge->n1->visited)? minEdge->n2 : minEdge->n1, Ed
+                );
         return g;
     }
-    bool isCyclic_util(NodePtr root, bool &iscycle, NodePtr paraent_node) {
-        if(!iscycle)
+    bool isCyclic_util(NodePtr root, bool &iscycle, NodePtr paraent_node)
+    {
+        root->visited = true; //Data: root->data()
+        for(int i=0; i<root->degree() && !iscycle; ++i)
         {
-            root->visited = true; //Data: root->data()
-            for(int i=0; i<root->degree() && !iscycle; ++i)
-            {
-                NodePtr nextNode=(root->Links[i]->n1==root)? 
-                            root->Links[i]->n2 : root->Links[i]->n1;
-                if(!nextNode->visited)
-                    iscycle = isCyclic_util(nextNode, iscycle, root);
-                else if(nextNode != paraent_node)
-                    return true;// Cycle found
-            }
+            NodePtr nextNode=(root->Links[i]->n1==root)? 
+                        root->Links[i]->n2 : root->Links[i]->n1;
+            if(!nextNode->visited)
+                iscycle = isCyclic_util(nextNode, iscycle, root);
+            else if(nextNode != paraent_node)
+                return true;// Cycle found
         }
         return iscycle;
     }
@@ -230,11 +234,12 @@ public:
         reset_visited();
         if(root == NULL) root = N[0];
         DFT_util(root);
+        
         cout<<"\nNo. of nodes: "<<num_nodes()
             <<"\nNo. of edges: "<<num_edge<<endl;
     }
 
-    Graph<T> dijikstra(NodePtr root = NULL)
+    void dijikstra(NodePtr root = NULL)
     {
         vector<EdgePtr> Ed;
         Ed.reserve(MAX_NODE*DEGREE);
@@ -243,6 +248,7 @@ public:
         if(root == NULL) root = N[0];
         distance[0] = 0;
         distance = dijSSSP_util(root, Ed, distance);
+        
         cout<<"\nDistances: \n";
         for(int i=0; i<num_nodes(); ++i)
             cout<<root->data()<<" - "
